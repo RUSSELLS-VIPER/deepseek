@@ -8,10 +8,10 @@ export async function GET(req) {
         const { userId } = getAuth(req)
 
         if (!userId) {
-            return NextResponse.json({
-                success: false,
-                message: 'User not authenticated'
-            })
+            return NextResponse.json(
+                { success: false, message: 'User not authenticated' },
+                { status: 401 }
+            )
         }
 
         await connectDB()
@@ -19,6 +19,10 @@ export async function GET(req) {
 
         return NextResponse.json({ success: true, data })
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message })
+        console.error('GET /api/Chat/Get error:', error)
+        return NextResponse.json(
+            { success: false, error: error.message || 'Internal server error' },
+            { status: 500 }
+        )
     }
 }

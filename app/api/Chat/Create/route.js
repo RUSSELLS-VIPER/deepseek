@@ -8,7 +8,10 @@ export async function POST(req) {
         const { userId } = getAuth(req)
 
         if (!userId) {
-            return NextResponse.json({ success: false, message: 'User not authenticated' })
+            return NextResponse.json(
+                { success: false, message: 'User not authenticated' },
+                { status: 401 }
+            )
         }
 
         const chatData = {
@@ -23,6 +26,10 @@ export async function POST(req) {
         return NextResponse.json({ success: true, message: 'Chat created' })
 
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message })
+        console.error('POST /api/Chat/Create error:', error)
+        return NextResponse.json(
+            { success: false, error: error.message || 'Internal server error' },
+            { status: 500 }
+        )
     }
 }

@@ -34,3 +34,20 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Environment
+
+### Setup
+
+- Copy `.env.example` to `.env.local` or `.env` (add to `.gitignore` if not already there).
+- Replace placeholder values with your own credentials:
+  - **DEEPSEEK_API_KEY**: Get from [DeepSeek API](https://platform.deepseek.com)
+  - **MONGODB_URI**: MongoDB connection string
+  - **CLERK_SECRET_KEY** & **NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY**: Get from [Clerk Dashboard](https://dashboard.clerk.com)
+
+### Security Notes
+
+- **Never commit `.env` to version control.** It's already in `.gitignore`.
+- Keep secret keys (those without `NEXT_PUBLIC_` prefix) server-side only.
+- If a key is exposed, rotate it immediately in its provider's dashboard.
+- Test credentials (prefixed `sk_test_` or `pk_test_`) are for development; use production keys when deploying.

@@ -9,18 +9,22 @@ export async function POST(req) {
         const { chatId } = await req.json()
 
         if (!userId) {
-            return NextResponse.json({
-                success: false,
-                message: 'User not authenticated'
-            })
+            return NextResponse.json(
+                { success: false, message: 'User not authenticated' },
+                { status: 401 }
+            )
         }
 
         await connectDB()
         await Chat.deleteOne({ _id: chatId, userId })
         
-        return NextResponse.json({success:true, message:'Chat Deleted'})
+        return NextResponse.json({ success: true, message: 'Chat Deleted' })
 
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message })
+        console.error('POST /api/Chat/Delete error:', error)
+        return NextResponse.json(
+            { success: false, error: error.message || 'Internal server error' },
+            { status: 500 }
+        )
     }
 }

@@ -8,10 +8,10 @@ export async function POST(req) {
         const { userId } = getAuth(req)
 
         if (!userId) {
-            return NextResponse.json({
-                success: false,
-                message: 'User not authenticated'
-            })
+            return NextResponse.json(
+                { success: false, message: 'User not authenticated' },
+                { status: 401 }
+            )
         }
 
         const { chatId, name } = await req.json()
@@ -20,8 +20,12 @@ export async function POST(req) {
 
         await Chat.findOneAndUpdate({ _id: chatId, userId }, { name })
 
-        return NextResponse.json({ success: true, message: 'Chat Rnamed' })
+        return NextResponse.json({ success: true, message: 'Chat Renamed' })
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message })
+        console.error('POST /api/Chat/Rename error:', error)
+        return NextResponse.json(
+            { success: false, error: error.message || 'Internal server error' },
+            { status: 500 }
+        )
     }
 }
