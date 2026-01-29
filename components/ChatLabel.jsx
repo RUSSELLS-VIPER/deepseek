@@ -6,13 +6,13 @@ import React from "react";
 import toast from "react-hot-toast";
 
 const ChatLabel = ({ name, id, openMenu, setOpenMenu }) => {
-  const { fetchUserChats, chats, setSelectedChats } = useAppContext();
+  const { fetchUserChats, chats, setSelectedChat } = useAppContext(); // Fixed: changed from setSelectedChats
 
   const selectChat = () => {
     const chatData = chats.find((chat) => chat._id === id);
-    setSelectedChats(chatData);
-    console.log(chatData);
+    setSelectedChat(chatData); // Fixed: changed from setSelectedChats
   };
+
   const renameHandler = async () => {
     try {
       const newName = prompt("Enter new name");
@@ -51,6 +51,7 @@ const ChatLabel = ({ name, id, openMenu, setOpenMenu }) => {
       toast.error(error.message);
     }
   };
+
   return (
     <div
       onClick={selectChat}

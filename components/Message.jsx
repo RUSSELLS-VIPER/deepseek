@@ -1,17 +1,45 @@
 import { assets } from "@/assets/assets";
 import Image from "next/image";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import Prism from "prismjs";
+import toast from "react-hot-toast";
 
 const Message = ({ role, content }) => {
+  const [copySuccess, setCopySuccess] = useState(false);
+
   useEffect(() => {
     Prism.highlightAll();
   }, [content]);
 
-  const copyMessage = () => {
-    navigator.clipbord.writeText(content);
-    toast.success("Message coped to clipboard");
+  const handleCopy = async () => {
+    try {
+      // Fallback for clipboard API
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(content);
+      } else {
+        // Fallback for older browsers or insecure contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = content;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+
+      setCopySuccess(true);
+      toast.success("Copied to clipboard!");
+
+      // Reset copy success after 2 seconds
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast.error("Failed to copy");
+    }
   };
 
   return (
@@ -22,51 +50,6 @@ const Message = ({ role, content }) => {
         <div
           className={`group relative flex max-w-2xl py-3 rounded-xl ${role === "user" ? "bg-[#414158] px-5" : "gap-3"}`}
         >
-          <div
-            className={`opacity-0 group-hover:opacity-100 absolute ${role === "user" ? "-left-16 top-2.5" : "left-9 -bottom-6"} transition-all`}
-          >
-            <div className="flex items-center gap-2 opacity-70">
-              {role === "user" ? (
-                <>
-                  <Image
-                    onClick={copyMessage}
-                    src={assets.copy_icon}
-                    alt=""
-                    className="w-4 cursor-pointer"
-                  />
-                  <Image
-                    src={assets.pencil_icon}
-                    alt=""
-                    className="w-4.5 cursor-pointer"
-                  />
-                </>
-              ) : (
-                <>
-                  <Image
-                    onClick={copyMessage}
-                    src={assets.pencil_icon}
-                    alt=""
-                    className="w-4.5 cursor-pointer"
-                  />
-                  <Image
-                    src={assets.regenerate_icon}
-                    alt=""
-                    className="w-4.5 cursor-pointer"
-                  />
-                  <Image
-                    src={assets.like_icon}
-                    alt=""
-                    className="w-4.5 cursor-pointer"
-                  />
-                  <Image
-                    src={assets.dislike_icon}
-                    alt=""
-                    className="w-4.5 cursor-pointer"
-                  />
-                </>
-              )}
-            </div>
-          </div>
           {role === "user" ? (
             <span className="text-white/90">{content}</span>
           ) : (
@@ -78,6 +61,24 @@ const Message = ({ role, content }) => {
               />
               <div className="space-y-4 w-full overflow-scroll">
                 <Markdown>{content}</Markdown>
+                {/* Add copy button for AI messages only */}
+                <div className="flex items-center gap-2 mt-2">
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
+                  >
+                    <Image
+                      src={assets.copy_icon}
+                      alt="Copy"
+                      className="w-4 h-4"
+                      onError={(e) => {
+                        // Fallback if image fails to load
+                        e.target.style.display = "none";
+                      }}
+                    />
+                    {copySuccess ? "Copied!" : "Copy"}
+                  </button>
+                </div>
               </div>
             </>
           )}
