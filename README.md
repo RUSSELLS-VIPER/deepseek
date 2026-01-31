@@ -128,20 +128,9 @@ export default nextConfig;
 }
 ```
 
-#### `middleware.ts`
+#### `middleware.ts` (Removed)
 
-```typescript
-import { clerkMiddleware } from "@clerk/nextjs/server";
-
-export default clerkMiddleware();
-
-export const config = {
-  matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
-  ],
-};
-```
+**Note:** `middleware.ts` has been removed in the latest version. Clerk middleware is now integrated directly into the application through ClerkProvider and the `auth()` function imported from `@clerk/nextjs`.
 
 ---
 
@@ -587,13 +576,14 @@ import { assets } from "@/assets/assets";
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import toast from "react-hot-toast";
 
 const PromptBox = ({ setIsLoading, isLoading }) => {
   const [prompt, setPrompt] = useState("");
-  const { user, chats, setChats, selectedChat, setSelectedChat } =
+  const { user, chats, setChats, selectedChat, setSelectedChat, getToken } =
     useAppContext();
+  const timeoutRefs = useRef([]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -626,54 +616,81 @@ const PromptBox = ({ setIsLoading, isLoading }) => {
         timestamp: Date.now(),
       };
 
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat._id === activeChat._id
-            ? { ...chat, messages: [...chat.messages, userPrompt] }
-            : chat,
-        ),
+      // Update selectedChat state with user message
+      const updatedSelectedChat = {
+        ...selectedChat,
+        messages: [...selectedChat.messages, userPrompt],
+      };
+      setSelectedChat(updatedSelectedChat);
+
+      // Update chats state with user message
+      const updatedChats = chats.map((chat) =>
+        chat._id === activeChat._id
+          ? { ...chat, messages: [...chat.messages, userPrompt] }
+          : chat,
+      );
+      setChats(updatedChats);
+
+      // Get authentication token from AppContext
+      const token = await getToken();
+
+      const { data } = await axios.post(
+        "/api/Chat/AI",
+        {
+          chatId: activeChat._id,
+          prompt,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
-      setSelectedChat((prev) => ({
-        ...prev,
-        messages: [...prev.messages, userPrompt],
-      }));
+      if (!data.success) {
+        throw new Error(data.message || "AI request failed");
+      }
 
-      const { data } = await axios.post("/api/Chat/AI", {
-        chatId: activeChat._id,
-        prompt,
-      });
+      // Get AI response
+      const aiResponse = data.data || data;
+      const aiContent = aiResponse.content || "";
 
-      if (!data.success) throw new Error(data.message);
+      if (!aiContent) {
+        throw new Error("No content in AI response");
+      }
 
-      const aiText = data.message;
-      const tokens = aiText.split(" ");
-
-      let assistantMessage = {
+      // SIMPLIFIED VERSION - No streaming to avoid infinite loops
+      const assistantMessage = {
         role: "assistant",
-        content: "",
+        content: aiContent,
         timestamp: Date.now(),
       };
 
+      // Update selectedChat with AI response
       setSelectedChat((prev) => ({
         ...prev,
         messages: [...prev.messages, assistantMessage],
       }));
 
-      tokens.forEach((_, i) => {
-        setTimeout(() => {
-          setSelectedChat((prev) => {
-            const msgs = [...prev.messages];
-            msgs[msgs.length - 1] = {
-              ...assistantMessage,
-              content: tokens.slice(0, i + 1).join(" "),
+      // Update chats array with AI response
+      setChats((prevChats) =>
+        prevChats.map((chat) => {
+          if (chat._id === activeChat._id) {
+            return {
+              ...chat,
+              messages: [...chat.messages, assistantMessage],
             };
-            return { ...prev, messages: msgs };
-          });
-        }, i * 80);
-      });
+          }
+          return chat;
+        }),
+      );
     } catch (err) {
-      toast.error(err.message || "Something went wrong");
+      console.error("Send prompt error:", err);
+      if (err.response?.status === 401) {
+        toast.error("Authentication failed. Please log in again.");
+      } else {
+        toast.error(err.message || "Something went wrong");
+      }
       setPrompt(promptCopy);
     } finally {
       setIsLoading(false);
@@ -682,24 +699,41 @@ const PromptBox = ({ setIsLoading, isLoading }) => {
 
   return (
     <form
+      rows={2}
       onSubmit={sendPrompt}
-      className="fixed bottom-0 w-full flex justify-center py-6"
+      className={`w-full ${
+        selectedChat?.messages.length ? "max-w-3xl" : "max-w-2xl"
+      } bg-[#404045] p-4 rounded-3xl mt-1 transition-all`}
     >
-      <div className="flex items-end gap-3 relative w-full sm:w-2/3 px-4">
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Message DeepSeek"
-          className="w-full bg-[#414158] border border-white/10 rounded-xl px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-white/30 resize-none max-h-48"
-        />
-        <button
-          type="submit"
-          disabled={isLoading || !prompt.trim()}
-          className="flex items-center justify-center h-10 w-10 bg-primary rounded-xl disabled:opacity-50"
-        >
-          <Image src={assets.arrow_icon} alt="" className="w-6" />
-        </button>
+      <textarea
+        onKeyDown={handleKeyDown}
+        className="outline-none w-full resize-none overflow-hidden break-word bg-transparent"
+        rows={1}
+        placeholder="Message DeepSeek"
+        required
+        onChange={(e) => setPrompt(e.target.value)}
+        value={prompt}
+      />
+
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-2">
+          {/* Additional controls can be added here */}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="submit"
+            className={`${
+              prompt ? "bg-primary" : "bg-[#71717a]"
+            } rounded-full p-2 cursor-pointer`}
+          >
+            <Image
+              className="w-3.5 aspect-square"
+              src={prompt ? assets.arrow_icon : assets.arrow_icon_dull}
+              alt=""
+            />
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -875,7 +909,7 @@ export const assets = {
 export const maxDuration = 60;
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
@@ -886,7 +920,7 @@ const groq = new OpenAI({
 
 export async function POST(req) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
     const { chatId, prompt } = await req.json();
 
     if (!userId) {
@@ -938,12 +972,12 @@ export async function POST(req) {
 ```javascript
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
     if (!userId) {
       return NextResponse.json(
         { success: false, message: "User not authenticated" },
@@ -970,12 +1004,12 @@ export async function POST(req) {
 ```javascript
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
     if (!userId) {
       return NextResponse.json(
         { success: false, message: "User not authenticated" },
@@ -1001,12 +1035,12 @@ export async function GET(req) {
 ```javascript
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
     const { chatId } = await req.json();
 
     if (!userId) {
@@ -1034,12 +1068,12 @@ export async function POST(req) {
 ```javascript
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const { userId } = getAuth(req);
+    const { userId } = auth();
     if (!userId) {
       return NextResponse.json(
         { success: false, message: "User not authenticated" },
