@@ -909,7 +909,7 @@ export const assets = {
 export const maxDuration = 60;
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { auth } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
@@ -972,7 +972,7 @@ export async function POST(req) {
 ```javascript
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { auth } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -1004,7 +1004,7 @@ export async function POST(req) {
 ```javascript
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { auth } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";extjs/server";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
@@ -1035,7 +1035,7 @@ export async function GET(req) {
 ```javascript
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { auth } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";extjs/server";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -1068,7 +1068,7 @@ export async function POST(req) {
 ```javascript
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { auth } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {

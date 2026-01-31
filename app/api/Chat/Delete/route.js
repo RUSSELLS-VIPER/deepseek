@@ -1,6 +1,6 @@
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { auth } from "@clerk/nextjs"; // Changed
+import { currentUser } from "@clerk/nextjs/server"; // Changed
 import { NextResponse } from "next/server";
 
 export async function POST(req) {

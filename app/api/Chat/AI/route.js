@@ -1,7 +1,7 @@
 export const maxDuration = 60;
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { auth } from "@clerk/nextjs"; // Change from getAuth
+import { currentUser } from "@clerk/nextjs/server"; // Change from getAuth
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
