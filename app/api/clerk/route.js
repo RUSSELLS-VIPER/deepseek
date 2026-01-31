@@ -1,43 +1,44 @@
-import { Webhook } from "svix";
-import connectDB from "@/config/db";
-import User from '@/models/User'
-import { headers } from "next/headers";
-import { NextRequest } from "next/server";
+import { Webhook } from 'svix';
+import { headers } from 'next/headers';
+import { WebhookEvent } from '@clerk/nextjs/server';
 
 export async function POST(req) {
-    const wh = new Webhook(process.env.SIGNING_SECRET)
-    const headerPayload = await headers()
-    const svixHeaders = {
-        'svix-id': headerPayload.get('svix-id'),
-        'svix-timestamp': headerPayload.get('svix-timestamp'),
-        'svix-signature': headerPayload.get('svix-signature')
-    }
-    const payload = await req.json()
-    const body = JSON.stringify(payload)
-    const { data, type } = wh.verify(body, svixHeaders)
-    
-    const userData = {
-        _id: data.id,
-        email: data.email_addresses[0].email_address,
-        name: `${data.first_name} ${data.last_name}`,
-        image:data.image_url,
-    }
+  const SIGNING_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
-    await connectDB()
+  if (!SIGNING_SECRET) {
+    return new Response('Error: No webhook secret', { status: 500 });
+  }
 
-    switch (type) {
-        case 'user.created':
-            await User.create(userData)
-            break;
-        case 'user.updated':
-            await User.findByIdAndUpdate(data.id,userData)
-            break;
-        case 'user.deleted':
-            await User.findByIdAndDelete(data.id)
-            break;
+  const headerPayload = headers();
+  const svix_id = headerPayload.get('svix-id');
+  const svix_timestamp = headerPayload.get('svix-timestamp');
+  const svix_signature = headerPayload.get('svix-signature');
+
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return new Response('Error: Missing svix headers', { status: 400 });
+  }
+
+  const payload = await req.json();
+  const body = JSON.stringify(payload);
+
+  const wh = new Webhook(SIGNING_SECRET);
+
+  try {
+    const evt = wh.verify(body, {
+      'svix-id': svix_id,
+      'svix-timestamp': svix_timestamp,
+      'svix-signature': svix_signature,
+    });
     
-        default:
-            break;
-    }
-    return NextRequest.json({message: 'Event recived'})
+    const { id } = evt.data;
+    const eventType = evt.type;
+
+    console.log(`Webhook with ID ${id} and type ${eventType}`);
+    console.log('Webhook body:', body);
+
+    return new Response('Webhook received', { status: 200 });
+  } catch (err) {
+    console.error('Error verifying webhook:', err.message);
+    return new Response('Error: Invalid signature', { status: 400 });
+  }
 }
