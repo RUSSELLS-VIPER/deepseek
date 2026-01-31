@@ -1,12 +1,12 @@
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { currentUser } from "@clerk/nextjs/server"; // Changed
+import { currentUser } from "@clerk/nextjs/server"; // CHANGED
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const { userId } = auth(); // Changed
-    const { chatId } = await req.json();
+    const user = await currentUser(); // CHANGED
+    const userId = user?.id; // CHANGED
 
     if (!userId) {
       return NextResponse.json(
@@ -15,6 +15,7 @@ export async function POST(req) {
       );
     }
 
+    const { chatId } = await req.json();
     await connectDB();
     await Chat.deleteOne({ _id: chatId, userId });
     return NextResponse.json({ success: true, message: "Chat Deleted" });
