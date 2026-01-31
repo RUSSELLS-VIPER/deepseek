@@ -1,12 +1,11 @@
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { currentUser } from "@clerk/nextjs/server"; // CHANGED
+import { auth } from "@clerk/nextjs/server"; // CHANGED
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
   try {
-    const user = await currentUser(); // CHANGED
-    const userId = user?.id; // CHANGED
+    const { userId } = auth(); // CHANGED - No await needed
 
     if (!userId) {
       return NextResponse.json(

@@ -12,25 +12,16 @@ export const useAppContext = () => {
 
 export const AppContextProvider = ({ children }) => {
   const { user } = useUser();
-  const { getToken } = useAuth();
+  // Remove getToken if you don't need it
 
   const [chats, setChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedChat, setSelectedChat] = useState(null); // Fixed: was selectedChats
 
   const createNewChat = async () => {
     try {
       if (!user) return null;
-      const token = await getToken();
-
-      await axios.post(
-        "/api/Chat/Create",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      // Remove token from headers - middleware handles auth
+      await axios.post("/api/Chat/Create", {});
       fetchUserChats();
     } catch (error) {
       toast.error(error.message);
@@ -39,12 +30,7 @@ export const AppContextProvider = ({ children }) => {
 
   const fetchUserChats = async () => {
     try {
-      const token = await getToken();
-      const { data } = await axios.get("/api/Chat/Get", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { data } = await axios.get("/api/Chat/Get");
       if (data.success) {
         setChats(data.data);
         if (data.data.length === 0) {
@@ -74,11 +60,10 @@ export const AppContextProvider = ({ children }) => {
     user,
     chats,
     setChats,
-    selectedChat,
-    setSelectedChat,
+    selectedChat, // Fixed: was selectedChats
+    setSelectedChat, // Fixed: was setSelectedChats
     fetchUserChats,
     createNewChat,
-    getToken, 
   };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };

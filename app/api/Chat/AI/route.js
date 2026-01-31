@@ -1,7 +1,7 @@
 export const maxDuration = 60;
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
-import { currentUser } from "@clerk/nextjs/server"; // CHANGED
+import { auth } from "@clerk/nextjs/server"; // CHANGED
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
@@ -12,8 +12,7 @@ const groq = new OpenAI({
 
 export async function POST(req) {
   try {
-    const user = await currentUser(); // CHANGED
-    const userId = user?.id; // CHANGED
+    const { userId } = auth(); // CHANGED - No await needed
 
     if (!userId) {
       return NextResponse.json(
