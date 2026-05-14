@@ -4,7 +4,6 @@ import axios from "axios";
 import Image from "next/image";
 import React, { useState, useRef } from "react";
 import toast from "react-hot-toast";
-import { getAuth } from "@clerk/nextjs/server";
 
 const PromptBox = ({ setIsLoading, isLoading }) => {
   const [prompt, setPrompt] = useState("");
@@ -58,15 +57,10 @@ const PromptBox = ({ setIsLoading, isLoading }) => {
       );
       setChats(updatedChats);
 
-      // Get authentication token from AppContext
-      const token = await getToken();
-
-      // In PromptBox.jsx, change the axios call:
       const { data } = await axios.post("/api/Chat/AI", {
         chatId: activeChat._id,
         prompt,
       });
-      // Remove headers object
 
       if (!data.success) {
         throw new Error(data.message || "AI request failed");

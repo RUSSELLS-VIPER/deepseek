@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    const { userId } = auth(); // CHANGED - No await needed
+    const { userId } = await auth(); // CHANGED - No await needed
 
     if (!userId) {
       return NextResponse.json(
@@ -26,3 +26,4 @@ export async function POST(req) {
     );
   }
 }
+

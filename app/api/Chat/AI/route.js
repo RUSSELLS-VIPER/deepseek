@@ -1,4 +1,5 @@
 export const maxDuration = 60;
+export const runtime = "nodejs";
 import connectDB from "@/config/db";
 import Chat from "@/models/Chat";
 import { auth } from "@clerk/nextjs/server"; // CHANGED
@@ -12,7 +13,7 @@ const groq = new OpenAI({
 
 export async function POST(req) {
   try {
-    const { userId } = auth(); // CHANGED - No await needed
+    const { userId } = await auth();
 
     if (!userId) {
       return NextResponse.json(
@@ -22,6 +23,12 @@ export async function POST(req) {
     }
 
     const { chatId, prompt } = await req.json();
+    if (!prompt?.trim()) {
+      return NextResponse.json(
+        { success: false, message: "Prompt is required" },
+        { status: 400 },
+      );
+    }
 
     await connectDB();
     const data = await Chat.findOne({ userId, _id: chatId });

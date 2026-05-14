@@ -1109,8 +1109,47 @@ export async function POST(req) {
 ✅ **Error Handling** - Toast notifications for user feedback  
 ✅ **Performance** - Optimized with React Compiler and efficient state management
 
-## Deploy on Vercel
+## Deploy on AWS Amplify
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project can be deployed on **AWS Amplify Hosting** with server-side rendering support for Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 1) Push code to GitHub (or GitLab/Bitbucket)
+
+Make sure your repo contains:
+- `amplify.yml` (already added in this project)
+- `package.json`
+- `next.config.mjs`
+
+### 2) Create Amplify app
+
+1. Open AWS Amplify Console.
+2. Click **New app** -> **Host web app**.
+3. Connect your Git provider and select this repository/branch.
+4. Keep default build image and let Amplify detect `amplify.yml`.
+
+### 3) Add environment variables in Amplify
+
+In Amplify -> **App settings** -> **Environment variables**, add:
+- `GROQ_API_KEY`
+- `MONGODB_URI`
+- `CLERK_SECRET_KEY`
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+
+If your Clerk setup needs these as well, add:
+- `NEXT_PUBLIC_CLERK_SIGN_IN_URL`
+- `NEXT_PUBLIC_CLERK_SIGN_UP_URL`
+- `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`
+- `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`
+
+### 4) Deploy
+
+1. Click **Save and deploy**.
+2. Wait for build + deploy to complete.
+3. Open the Amplify domain and test:
+   - Sign in flow
+   - Create chat
+   - AI response generation
+
+### 5) Custom domain (optional)
+
+In Amplify -> **Domain management**, connect your custom domain and follow DNS verification steps.

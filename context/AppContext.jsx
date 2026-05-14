@@ -12,7 +12,7 @@ export const useAppContext = () => {
 
 export const AppContextProvider = ({ children }) => {
   const { user } = useUser();
-  // Remove getToken if you don't need it
+  const { getToken } = useAuth();
 
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null); // Fixed: was selectedChats
@@ -58,6 +58,7 @@ export const AppContextProvider = ({ children }) => {
 
   const value = {
     user,
+    getToken,
     chats,
     setChats,
     selectedChat, // Fixed: was selectedChats
